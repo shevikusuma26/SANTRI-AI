@@ -50,6 +50,7 @@
             loadComponent('footer', 'footer.html');
         });
 
+
         function loadComponent(elementId, filePath) {
             fetch(filePath)
                 .then(response => response.text())
@@ -65,6 +66,7 @@
                             initializeDemoTabs();
                             setupDakwahTab();
                             setupFilterTab();
+                            setupLiterasiDigitalTab(); // Tambahkan ini
                         }, 500);
                     } else if (elementId === 'tutorial') {
                         // Setup download button in tutorial section
@@ -536,4 +538,5 @@
         }
     </script>
 </body>
+
 </html>
