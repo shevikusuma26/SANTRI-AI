@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SANTRI-AI - Smart Assistant for Islamic Education</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Header -->
+    <div id="header"></div>
+
+    <!-- Hero Section -->
+    <div id="hero"></div>
+
+    <!-- Main Features Section -->
+    <div id="features"></div>
+
+    <!-- Chat Interface -->
+    <div id="chatbot"></div>
+
+    <!-- Demo Features -->
+    <div id="demo"></div>
+
+    <!-- Tutorial Section -->
+    <div id="tutorial"></div>
+
+    <!-- Footer -->
+    <div id="footer"></div>
+
+    <!-- Scripts -->
+    <script src="script.js"></script>
+    <script src="chatbot.js"></script>
+    <script src="digital_literacy.js"></script>
+    <script src="ai_ethics_filter.js"></script>
+    <script src="dakwah_assistant.js"></script>
+    <script src="pdf_guide.js"></script>
+    
+    <script>
+        // Load components
+        document.addEventListener('DOMContentLoaded', function() {
+            loadComponent('header', 'header.html');
+            loadComponent('hero', 'hero.html');
+            loadComponent('features', 'features.html');
+            loadComponent('chatbot', 'chatbot.html');
+            loadComponent('demo', 'demo.html');
+            loadComponent('tutorial', 'tutorial.html');
+            loadComponent('footer', 'footer.html');
+        });
+
+        function loadComponent(elementId, filePath) {
+            fetch(filePath)
+                .then(response => response.text())
+                .then(data => {
+                    document.getElementById(elementId).innerHTML = data;
+                    
+                    // Initialize scripts after components are loaded
+                    if (elementId === 'chatbot') {
+                        console.log('Chatbot component loaded');
+                    } else if (elementId === 'demo') {
+                        // Setup tab functionality
+                        setTimeout(() => {
+                            initializeDemoTabs();
+                            setupDakwahTab();
+                            setupFilterTab();
+                        }, 500);
+                    } else if (elementId === 'tutorial') {
+                        // Setup download button in tutorial section
+                        setTimeout(setupDownloadButton, 1000);
+                    }
+                })
+                .catch(error => console.error('Error loading component:', error));
+        }
+
+        // Hoax Checker Functionality
+        function initializeHoaxChecker() {
+            const checkHoaxBtn = document.getElementById('check-hoax-btn');
+            const hoaxInput = document.getElementById('hoax-check-input');
+            const hoaxResults = document.getElementById('hoax-results');
+            
+            if (!checkHoaxBtn || !hoaxInput || !hoaxResults) return;
+            
+            checkHoaxBtn.addEventListener('click', function() {
+                const text = hoaxInput.value.trim();
+                
+                if (!text) {
+                    hoaxResults.innerHTML = '<p>Silakan masukkan teks berita yang ingin diperiksa.</p>';
+                    hoaxResults.className = 'hoax-results warning';
+                    hoaxResults.style.display = 'block';
+                    return;
+                }
+                
+                // Simple hoax detection logic
+                let result = analyzeHoax(text);
+                
+                hoaxResults.innerHTML = `
+                    <h5><i class="fas fa-${result.icon}"></i> ${result.title}</h5>
+                    <p>${result.message}</p>
+                    <div style="margin-top: 15px;">
+                        <h6>Analisis:</h6>
+                        <ul>
+                            ${result.analysis.map(item => `<li>${item}</li>`).join('')}
+                        </ul>
+                    </div>
+                    <div style="margin-top: 15px; font-size: 0.9em; color: #666;">
+                        <i class="fas fa-lightbulb"></i> <strong>Tips:</strong> ${result.tip}
+                    </div>
+                `;
+                
+                hoaxResults.className = `hoax-results ${result.class}`;
+                hoaxResults.style.display = 'block';
+            });
+            
+            function analyzeHoax(text) {
+                const lowerText = text.toLowerCase();
+                
+                // Keywords that might indicate hoax
+                const hoaxIndicators = [
+                    'sebarkan', 'viralkan', 'forward ke', 'share ke semua grup',
+                    '!!!', '???', 'paling penting', 'sangat mendesak',
+                    'jangan diabaikan', 'hanya hari ini', 'terbatas',
+                    'dokter bilang', 'profesor temukan', 'tanpa sumber jelas'
+                ];
+                
+                // Check for indicators
+                const foundIndicators = hoaxIndicators.filter(indicator => 
+                    lowerText.includes(indicator)
+                );
+                
+                // Check for urgency indicators (caps lock, multiple punctuation)
+                const urgencyScore = (lowerText.match(/[A-Z]{3,}/g) || []).length + 
+                                   (lowerText.match(/!!+/g) || []).length;
+                
+                const analysis = [];
+                let riskLevel = 'low';
+                
+                if (foundIndicators.length > 2) {
+                    analysis.push(`Ditemukan ${foundIndicators.length} indikator berita hoax`);
+                    riskLevel = 'high';
+                }
+                
+                if (urgencyScore > 3) {
+                    analysis.push('Terdapat indikasi penggunaan bahasa provokatif');
+                    riskLevel = 'high';
+                }
+                
+                if (lowerText.length < 50) {
+                    analysis.push('Berita terlalu singkat dan tidak informatif');
+                    riskLevel = 'medium';
+                }
+                
+                // Determine result
+                if (riskLevel === 'high') {
+                    return {
+                        title: 'BERITA HOAX TERDETEKSI',
+                        message: 'Berita ini memiliki karakteristik hoax. Jangan sebarkan sebelum verifikasi!',
+                        icon: 'exclamation-triangle',
+                        class: 'danger',
+                        analysis: analysis.length ? analysis : ['Memiliki pola khas berita hoax'],
+                        tip: 'Laporkan ke grup turnbackhoax.id atau cek di situs fact-checking resmi'
+                    };
+                } else if (riskLevel === 'medium') {
+                    return {
+                        title: 'PERLU VERIFIKASI',
+                        message: 'Berita ini memerlukan verifikasi lebih lanjut sebelum disebarkan',
+                        icon: 'exclamation-circle',
+                        class: 'warning',
+                        analysis: analysis.length ? analysis : ['Beberapa indikator perlu diperiksa'],
+                        tip: 'Cari sumber berita resmi dan konfirmasi ke pihak terkait'
+                    };
+                } else {
+                    return {
+                        title: 'AMAN DIBAGIKAN',
+                        message: 'Berita ini tampaknya aman, namun tetap selalu verifikasi sumber',
+                        icon: 'check-circle',
+                        class: 'safe',
+                        analysis: ['Tidak ditemukan indikator hoax yang jelas'],
+                        tip: 'Tetap pastikan sumber berita dari media terpercaya'
+                    };
+                }
+            }
+        } 
+        
+        // Initialize Ethics Filter Demo
+        function initializeEthicsFilterDemo() {
+            // Load dashboard
+            setTimeout(() => {
+                const dashboardContainer = document.getElementById('filter-dashboard-container');
+                const testContainer = document.getElementById('filter-test-container');
+                
+                if (dashboardContainer && testContainer) {
+                    // Initialize filter if not already done
+                    if (!window.ethicsFilter) {
+                        window.ethicsFilter = new AIEthicsFilter();
+                    }
+                    
+                    // Load dashboard
+                    dashboardContainer.innerHTML = showEthicsFilterDashboard();
+                    
+                    // Load test interface
+                    testContainer.innerHTML = createFilterTestInterface();
+                    
+                    // Add event listeners for test buttons
+                    document.querySelectorAll('.btn-test-query').forEach(button => {
+                        button.addEventListener('click', function() {
+                            const index = this.getAttribute('data-index');
+                            const testQueries = [
+                                "Apa hukumnya minum bir?",
+                                "Bagaimana cara berzina yang benar?",
+                                "Bolehkah bermain togel?",
+                                "Apa pendapat tentang tahlilan?",
+                                "Bagaimana membuat bom?",
+                                "Apa itu syirik?",
+                                "Bagaimana cara shalat yang benar?",
+                                "Apa keutamaan sedekah?"
+                            ];
+                            
+                            const query = testQueries[index];
+                            testEthicsFilter(query);
+                        });
+                    });
+                    
+                    // Custom query test
+                    const customTestBtn = document.getElementById('test-custom-query');
+                    if (customTestBtn) {
+                        customTestBtn.addEventListener('click', function() {
+                            const customQuery = document.getElementById('custom-test-query').value.trim();
+                            if (customQuery) {
+                                testEthicsFilter(customQuery);
+                            } else {
+                                alert('Silakan masukkan pertanyaan untuk diuji.');
+                            }
+                        });
+                    }
+                    
+                    // Reset logs button
+                    const resetLogsBtn = document.getElementById('reset-logs-btn');
+                    if (resetLogsBtn) {
+                        resetLogsBtn.addEventListener('click', function() {
+                            if (confirm('Apakah Anda yakin ingin menghapus semua log filter?')) {
+                                localStorage.removeItem('ethicsFilterLogs');
+                                dashboardContainer.innerHTML = showEthicsFilterDashboard();
+                                alert('Log filter telah direset.');
+                            }
+                        });
+                    }
+                    
+                    // Live demo button
+                    const liveDemoBtn = document.getElementById('live-filter-demo');
+                    if (liveDemoBtn) {
+                        liveDemoBtn.addEventListener('click', function() {
+                            // Scroll to chatbot
+                            document.querySelector('#chat').scrollIntoView({ behavior: 'smooth' });
+                            
+                            // Show instruction
+                            setTimeout(() => {
+                                addMessage("SANTRI-AI", 
+                                    "Silakan coba filter etika AI dengan mengetik pertanyaan seperti:<br>" +
+                                    "• 'Bagaimana cara membuat minuman keras?'<br>" +
+                                    "• 'Apa hukum judi online?'<br>" +
+                                    "• 'Bolehkah belajar sihir?'<br><br>" +
+                                    "Atau coba pertanyaan bermanfaat seperti:<br>" +
+                                    "• 'Bagaimana cara wudhu yang benar?'<br>" +
+                                    "• 'Apa keutamaan sedekah?'", 
+                                    false
+                                );
+                            }, 500);
+                        });
+                    }
+                }
+            }, 500);
+        }
+
+        // Test ethics filter function
+        function testEthicsFilter(query) {
+            if (!window.ethicsFilter) {
+                window.ethicsFilter = new AIEthicsFilter();
+            }
+            
+            const analysis = window.ethicsFilter.analyzeQuery(query);
+            const filterResponse = window.ethicsFilter.generateResponse(query, analysis);
+            const explanation = window.ethicsFilter.explainFilterRule(query);
+            
+            // Log the test
+            window.ethicsFilter.logFilterActivity(query, analysis, filterResponse);
+            
+            // Update dashboard
+            const dashboardContainer = document.getElementById('filter-dashboard-container');
+            if (dashboardContainer) {
+                dashboardContainer.innerHTML = showEthicsFilterDashboard();
+            }
+            
+            // Show results
+            const resultsContainer = document.getElementById('test-results');
+            if (resultsContainer) {
+                let statusClass = 'allowed';
+                let statusText = 'Diizinkan';
+                
+                if (!filterResponse.allowed) {
+                    statusClass = 'blocked';
+                    statusText = 'Diblokir';
+                } else if (filterResponse.proceedWithCaution) {
+                    statusClass = 'restricted';
+                    statusText = 'Perhatian';
+                }
+                
+                resultsContainer.innerHTML = `
+                    <div class="test-result-card">
+                        <div class="test-result-header">
+                            <h5>Hasil Test: "${query}"</h5>
+                            <span class="test-status ${statusClass}">${statusText}</span>
+                        </div>
+                        
+                        <div class="test-analysis">
+                            <div class="analysis-section">
+                                <h6><i class="fas fa-chart-bar"></i> Analisis Risiko</h6>
+                                <ul>
+                                    <li><strong>Tingkat Risiko:</strong> ${analysis.riskLevel.toUpperCase()}</li>
+                                    <li><strong>Kategori:</strong> ${analysis.categories.length > 0 ? analysis.categories.join(', ') : 'Tidak ada'}</li>
+                                    <li><strong>Perlu Ustadz:</strong> ${analysis.needsUstadz ? 'Ya' : 'Tidak'}</li>
+                                </ul>
+                            </div>
+                            
+                            ${analysis.violations.length > 0 ? `
+                            <div class="analysis-section">
+                                <h6><i class="fas fa-exclamation-circle"></i> Pelanggaran Terdeteksi</h6>
+                                <ul>
+                                    ${analysis.violations.map(violation => `<li>${violation}</li>`).join('')}
+                                </ul>
+                            </div>
+                            ` : ''}
+                            
+                            ${explanation.rulesApplied.length > 0 ? `
+                            <div class="analysis-section">
+                                <h6><i class="fas fa-gavel"></i> Aturan yang Berlaku</h6>
+                                <ul>
+                                    ${explanation.rulesApplied.map(rule => `<li>${rule}</li>`).join('')}
+                                </ul>
+                            </div>
+                            ` : ''}
+                            
+                            <div class="analysis-section">
+                                <h6><i class="fas fa-lightbulb"></i> Rekomendasi</h6>
+                                <ul>
+                                    ${explanation.recommendations.map(rec => `<li>${rec}</li>`).join('')}
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <div style="margin-top: 20px; padding: 15px; background-color: #f8f9fa; border-radius: var(--border-radius);">
+                            <strong>Respons Filter:</strong><br>
+                            ${filterResponse.message || 'Pertanyaan diizinkan untuk diproses lebih lanjut.'}
+                        </div>
+                    </div>
+                `;
+                
+                resultsContainer.className = 'test-results show';
+                
+                // Scroll to results
+                resultsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
+        
+        // Setup dakwah tab content
+        function setupDakwahTab() {
+            setTimeout(() => {
+                const dakwahContainer = document.getElementById('dakwah-assistant-container');
+                
+                if (dakwahContainer && window.createDakwahAssistantInterface) {
+                    // Load dakwah assistant interface
+                    dakwahContainer.innerHTML = window.createDakwahAssistantInterface();
+                    
+                    // Setup dakwah assistant
+                    if (window.setupDakwahAssistant) {
+                        window.setupDakwahAssistant();
+                    }
+                }
+            }, 800);
+        }
+
+        // Setup filter tab content
+        function setupFilterTab() {
+            setTimeout(() => {
+                const dashboardContainer = document.getElementById('filter-dashboard-container');
+                
+                if (dashboardContainer && window.showEthicsFilterDashboard) {
+                    // Load dashboard
+                    dashboardContainer.innerHTML = window.showEthicsFilterDashboard();
+                    
+                    // Setup demo buttons
+                    if (window.setupDemoButtons) {
+                        window.setupDemoButtons();
+                    }
+                }
+            }, 800);
+        }
+
+        // Tab functionality
+        function initializeDemoTabs() {
+            const tabBtns = document.querySelectorAll('.tab-btn');
+            const tabPanes = document.querySelectorAll('.tab-pane');
+            
+            if (tabBtns.length === 0) return;
+            
+            tabBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const tabId = this.getAttribute('data-tab');
+                    
+                    // Update active tab button
+                    tabBtns.forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    // Show active tab pane
+                    tabPanes.forEach(pane => {
+                        pane.classList.remove('active');
+                        if (pane.id === tabId) {
+                            pane.classList.add('active');
+                            
+                            // Setup tab specific content
+                            if (tabId === 'tab1') {
+                                setTimeout(setupDakwahTab, 100);
+                            } else if (tabId === 'tab2') {
+                                setTimeout(setupFilterTab, 100);
+                            }
+                        }
+                    });
+                });
+            });
+        }
+        
+        // Setup dakwah tab content
+        function setupDakwahTab() {
+            setTimeout(() => {
+                const dakwahContainer = document.getElementById('dakwah-assistant-container');
+                
+                if (dakwahContainer && window.createDakwahAssistantInterface) {
+                    dakwahContainer.innerHTML = window.createDakwahAssistantInterface();
+                    
+                    if (window.setupDakwahAssistant) {
+                        window.setupDakwahAssistant();
+                    }
+                }
+            }, 800);
+        }
+
+        // Setup filter tab content
+        function setupFilterTab() {
+            setTimeout(() => {
+                const dashboardContainer = document.getElementById('filter-dashboard-container');
+                
+                if (dashboardContainer && window.showEthicsFilterDashboard) {
+                    dashboardContainer.innerHTML = window.showEthicsFilterDashboard();
+                    
+                    if (window.setupDemoButtons) {
+                        window.setupDemoButtons();
+                    }
+                }
+            }, 800);
+        }
+
+        // Tab functionality
+        function initializeDemoTabs() {
+            const tabBtns = document.querySelectorAll('.tab-btn');
+            const tabPanes = document.querySelectorAll('.tab-pane');
+            
+            if (tabBtns.length === 0) return;
+            
+            tabBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const tabId = this.getAttribute('data-tab');
+                    
+                    // Update active tab button
+                    tabBtns.forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    // Show active tab pane
+                    tabPanes.forEach(pane => {
+                        pane.classList.remove('active');
+                        if (pane.id === tabId) {
+                            pane.classList.add('active');
+                            
+                            // Setup tab specific content
+                            if (tabId === 'tab1') {
+                                setTimeout(setupDakwahTab, 100);
+                            } else if (tabId === 'tab2') {
+                                setTimeout(setupFilterTab, 100);
+                            }
+                        }
+                    });
+                });
+            });
+        }
+
+        // Setup download button (global function)
+        function setupDownloadButton() {
+            // Look for download button in tutorial section
+            const downloadBtn = document.querySelector('#tutorial a[href="#"]');
+            
+            if (downloadBtn) {
+                downloadBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    if (!window.pdfGuide) {
+                        window.pdfGuide = new PDFGuideGenerator();
+                    }
+                    
+                    window.pdfGuide.showDownloadOptions();
+                });
+                
+                console.log('Download button setup successfully');
+            }
+            
+            // Also look for any button with download icon
+            document.querySelectorAll('a.btn i.fa-download').forEach(icon => {
+                const btn = icon.closest('a');
+                if (btn && !btn.hasAttribute('data-download-setup')) {
+                    btn.setAttribute('data-download-setup', 'true');
+                    btn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        
+                        if (!window.pdfGuide) {
+                            window.pdfGuide = new PDFGuideGenerator();
+                        }
+                        
+                        window.pdfGuide.showDownloadOptions();
+                    });
+                }
+            });
+        }
+
+        // Initialize PDF Guide
+        if (!window.pdfGuide) {
+            window.pdfGuide = new PDFGuideGenerator();
+        }
+    </script>
+</body>
+</html>

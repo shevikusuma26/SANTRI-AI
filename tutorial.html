@@ -1,0 +1,62 @@
+<section id="tutorial" style="background-color: #f8f9fa; padding: 5rem 0;">
+    <div class="container">
+        <div class="section-title">
+            <h2>Tutorial Penggunaan SANTRI-AI</h2>
+            <p>Panduan lengkap untuk menggunakan platform SANTRI-AI di pesantren</p>
+        </div>
+        
+        <div style="max-width: 800px; margin: 0 auto;">
+            <div style="background-color: white; border-radius: var(--border-radius); padding: 30px; box-shadow: var(--box-shadow); margin-bottom: 30px;">
+                <h3 style="color: var(--primary-color); margin-bottom: 20px;">Cara Mengakses SANTRI-AI</h3>
+                <ol style="padding-left: 20px; margin-bottom: 20px;">
+                    <li style="margin-bottom: 10px;">Buka browser di komputer pesantren atau gawai santri</li>
+                    <li style="margin-bottom: 10px;">Kunjungi alamat website SANTRI-AI</li>
+                    <li style="margin-bottom: 10px;">Untuk penggunaan pertama, daftar akun dengan email pesantren</li>
+                    <li style="margin-bottom: 10px;">Login dengan akun yang telah didaftarkan</li>
+                    <li style="margin-bottom: 10px;">Pilih fitur yang ingin digunakan</li>
+                </ol>
+            </div>
+            
+            <div style="background-color: white; border-radius: var(--border-radius); padding: 30px; box-shadow: var(--box-shadow); margin-bottom: 30px;">
+                <h3 style="color: var(--primary-color); margin-bottom: 20px;">Tips Penggunaan Optimal</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;">
+                    <div style="border-left: 4px solid var(--accent-color); padding-left: 15px;">
+                        <h5>Gunakan Bahasa yang Jelas</h5>
+                        <p style="font-size: 0.95rem;">Ajukan pertanyaan dengan bahasa Indonesia yang baik dan spesifik untuk mendapatkan jawaban terbaik.</p>
+                    </div>
+                    <div style="border-left: 4px solid var(--secondary-color); padding-left: 15px;">
+                        <h5>Manfaatkan Filter Etika</h5>
+                        <p style="font-size: 0.95rem;">Filter etika AI akan membantu menjaga jawaban tetap dalam koridor nilai Islam.</p>
+                    </div>
+                    <div style="border-left: 4px solid var(--primary-color); padding-left: 15px;">
+                        <h5>Verifikasi dengan Ustadz</h5>
+                        <p style="font-size: 0.95rem;">Selalu konsultasikan jawaban AI dengan ustadz untuk memastikan keakuratannya.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="text-align: center; margin-top: 30px;">
+                <a href="#" class="btn btn-primary" style="padding: 15px 30px;">
+                    <i class="fas fa-download"></i> Download Panduan Lengkap (PDF)
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+<script>
+    // Setup download button in tutorial section
+    document.addEventListener('DOMContentLoaded', function() {
+        const downloadBtn = document.getElementById('download-panduan');
+        if (downloadBtn) {
+            downloadBtn.addEventListener('click', function() {
+                if (window.pdfGuide) {
+                    window.pdfGuide.showDownloadOptions();
+                } else {
+                    // Initialize if not already
+                    window.pdfGuide = new PDFGuideGenerator();
+                    window.pdfGuide.showDownloadOptions();
+                }
+            });
+        }
+    });
+</script>
