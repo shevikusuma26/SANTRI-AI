@@ -50,140 +50,332 @@
             loadComponent('footer', 'footer.html');
         });
 
-
-        function loadComponent(elementId, filePath) {
-            fetch(filePath)
-                .then(response => response.text())
-                .then(data => {
-                    document.getElementById(elementId).innerHTML = data;
+function loadComponent(elementId, filePath) {
+    fetch(filePath)
+        .then(response => response.text())
+        .then(data => {
+            document.getElementById(elementId).innerHTML = data;
+            
+            // Initialize scripts after components are loaded
+            if (elementId === 'chatbot') {
+                console.log('Chatbot component loaded');
+            } else if (elementId === 'demo') {
+                // Setup tab functionality
+                setTimeout(() => {
+                    initializeDemoTabs();
+                    setupDakwahTab();
+                    setupFilterTab();
+                    setupLiterasiDigitalTab(); // Tambahkan ini
                     
-                    // Initialize scripts after components are loaded
-                    if (elementId === 'chatbot') {
-                        console.log('Chatbot component loaded');
-                    } else if (elementId === 'demo') {
-                        // Setup tab functionality
-                        setTimeout(() => {
-                            initializeDemoTabs();
-                            setupDakwahTab();
-                            setupFilterTab();
-                            setupLiterasiDigitalTab(); // Tambahkan ini
-                        }, 500);
-                    } else if (elementId === 'tutorial') {
-                        // Setup download button in tutorial section
-                        setTimeout(setupDownloadButton, 1000);
-                    }
-                })
-                .catch(error => console.error('Error loading component:', error));
-        }
+                    // Juga setup hoax checker
+                    setTimeout(initializeHoaxChecker, 100);
+                }, 500);
+            } else if (elementId === 'tutorial') {
+                // Setup download button in tutorial section
+                setTimeout(setupDownloadButton, 1000);
+            }
+        })
+        .catch(error => console.error('Error loading component:', error));
+}
 
-        // Hoax Checker Functionality
-        function initializeHoaxChecker() {
-            const checkHoaxBtn = document.getElementById('check-hoax-btn');
-            const hoaxInput = document.getElementById('hoax-check-input');
-            const hoaxResults = document.getElementById('hoax-results');
+// Setup literasi digital tab content
+function setupLiterasiDigitalTab() {
+    setTimeout(() => {
+        // Setup simulation button
+        const simulationBtn = document.getElementById('simulation-btn');
+        if (simulationBtn) {
+            simulationBtn.addEventListener('click', function() {
+                // Cek apakah simulasi sudah diinisialisasi
+                if (!window.digitalLiteracySimulation) {
+                    // Coba load dari digital_literacy.js
+                    if (typeof DigitalLiteracySimulation !== 'undefined') {
+                        window.digitalLiteracySimulation = new DigitalLiteracySimulation();
+                        window.digitalLiteracySimulation.startSimulation();
+                    } else {
+                        // Fallback ke simulasi sederhana
+                        createSimpleLiteracySimulation();
+                    }
+                } else {
+                    window.digitalLiteracySimulation.startSimulation();
+                }
+            });
             
-            if (!checkHoaxBtn || !hoaxInput || !hoaxResults) return;
-            
-            checkHoaxBtn.addEventListener('click', function() {
-                const text = hoaxInput.value.trim();
+            // Juga jalankan simulasi saat tab diklik
+            const literacyTab = document.querySelector('[data-tab="tab3"]');
+            if (literacyTab) {
+                literacyTab.addEventListener('click', function() {
+                    setTimeout(() => {
+                        if (window.digitalLiteracySimulation) {
+                            window.digitalLiteracySimulation.startSimulation();
+                        }
+                    }, 100);
+                });
+            }
+        }
+    }, 800);
+}
+
+// Fallback simple simulation jika modul utama tidak tersedia
+function createSimpleLiteracySimulation() {
+    const tab3 = document.getElementById('tab3');
+    if (!tab3) return;
+    
+    const steps = [
+        {
+            question: "Anda menerima broadcast WhatsApp: 'DONASI URGENT untuk pesantren, transfer ke rekening 123.456'. Apa yang harus dilakukan?",
+            options: [
+                { text: "Segera transfer dan sebarkan", correct: false },
+                { text: "Cek ke sumber resmi pesantren tersebut", correct: true },
+                { text: "Abaikan saja", correct: false },
+                { text: "Tanya ke teman", correct: false }
+            ]
+        },
+        {
+            question: "Ada postingan menghina salah satu madzhab di media sosial. Bagaimana sikap yang benar?",
+            options: [
+                { text: "Ikut menghina madzhab lain", correct: false },
+                { text: "Laporkan dan beri nasehat dengan baik", correct: true },
+                { text: "Screenshot dan sebarkan", correct: false },
+                { text: "Biarkan saja", correct: false }
+            ]
+        }
+    ];
+    
+    let currentStep = 0;
+    let score = 0;
+    
+    function showStep(stepIndex) {
+        const step = steps[stepIndex];
+        tab3.innerHTML = `
+            <h3>Simulasi Literasi Digital</h3>
+            <div class="simulation-container">
+                <div class="simulation-header">
+                    <h4>Langkah ${stepIndex + 1}/${steps.length}</h4>
+                    <div class="simulation-score">Skor: ${score}</div>
+                </div>
                 
-                if (!text) {
-                    hoaxResults.innerHTML = '<p>Silakan masukkan teks berita yang ingin diperiksa.</p>';
-                    hoaxResults.className = 'hoax-results warning';
-                    hoaxResults.style.display = 'block';
+                <div class="simulation-scenario">
+                    <h5>Kasus ${stepIndex + 1}</h5>
+                    <div class="scenario-text">${step.question}</div>
+                </div>
+                
+                <div class="simulation-options">
+                    ${step.options.map((opt, idx) => `
+                        <div class="simulation-option">
+                            <input type="radio" name="step${stepIndex}" id="opt${stepIndex}_${idx}" value="${idx}">
+                            <label for="opt${stepIndex}_${idx}">${opt.text}</label>
+                        </div>
+                    `).join('')}
+                </div>
+                
+                <div class="simulation-actions">
+                    ${stepIndex > 0 ? `<button class="btn btn-secondary" id="prev-btn">← Sebelumnya</button>` : ''}
+                    <button class="btn btn-primary" id="next-btn">
+                        ${stepIndex === steps.length - 1 ? 'Lihat Hasil' : 'Berikutnya →'}
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        // Setup event listeners
+        document.querySelectorAll('.simulation-option').forEach(opt => {
+            opt.addEventListener('click', function() {
+                const input = this.querySelector('input');
+                input.checked = true;
+            });
+        });
+        
+        const prevBtn = document.getElementById('prev-btn');
+        if (prevBtn) {
+            prevBtn.addEventListener('click', () => {
+                if (currentStep > 0) {
+                    currentStep--;
+                    showStep(currentStep);
+                }
+            });
+        }
+        
+        const nextBtn = document.getElementById('next-btn');
+        if (nextBtn) {
+            nextBtn.addEventListener('click', () => {
+                const selected = document.querySelector(`input[name="step${currentStep}"]:checked`);
+                if (!selected) {
+                    alert('Pilih jawaban terlebih dahulu!');
                     return;
                 }
                 
-                // Simple hoax detection logic
-                let result = analyzeHoax(text);
+                const selectedIdx = parseInt(selected.value);
+                if (steps[currentStep].options[selectedIdx].correct) {
+                    score++;
+                }
                 
-                hoaxResults.innerHTML = `
-                    <h5><i class="fas fa-${result.icon}"></i> ${result.title}</h5>
-                    <p>${result.message}</p>
-                    <div style="margin-top: 15px;">
-                        <h6>Analisis:</h6>
+                if (currentStep < steps.length - 1) {
+                    currentStep++;
+                    showStep(currentStep);
+                } else {
+                    showResults();
+                }
+            });
+        }
+    }
+    
+    function showResults() {
+        const percentage = (score / steps.length) * 100;
+        tab3.innerHTML = `
+            <h3>Hasil Simulasi</h3>
+            <div class="result-container ${percentage >= 50 ? 'good' : 'fair'}">
+                <div class="result-score">
+                    <h4>Skor Anda: ${score}/${steps.length} (${percentage.toFixed(0)}%)</h4>
+                </div>
+                
+                <div class="result-message">
+                    <p>${percentage >= 50 ? 
+                        'Bagus! Anda memiliki dasar literasi digital yang baik.' : 
+                        'Perlu belajar lebih tentang literasi digital.'}</p>
+                    
+                    <div class="result-details">
+                        <h6>Tips:</h6>
                         <ul>
-                            ${result.analysis.map(item => `<li>${item}</li>`).join('')}
+                            <li>Selalu verifikasi informasi sebelum menyebar</li>
+                            <li>Gunakan media sosial untuk hal positif</li>
+                            <li>Laporkan konten negatif</li>
                         </ul>
                     </div>
-                    <div style="margin-top: 15px; font-size: 0.9em; color: #666;">
-                        <i class="fas fa-lightbulb"></i> <strong>Tips:</strong> ${result.tip}
-                    </div>
-                `;
+                </div>
                 
-                hoaxResults.className = `hoax-results ${result.class}`;
-                hoaxResults.style.display = 'block';
-            });
-            
-            function analyzeHoax(text) {
-                const lowerText = text.toLowerCase();
-                
-                // Keywords that might indicate hoax
-                const hoaxIndicators = [
-                    'sebarkan', 'viralkan', 'forward ke', 'share ke semua grup',
-                    '!!!', '???', 'paling penting', 'sangat mendesak',
-                    'jangan diabaikan', 'hanya hari ini', 'terbatas',
-                    'dokter bilang', 'profesor temukan', 'tanpa sumber jelas'
-                ];
-                
-                // Check for indicators
-                const foundIndicators = hoaxIndicators.filter(indicator => 
-                    lowerText.includes(indicator)
-                );
-                
-                // Check for urgency indicators (caps lock, multiple punctuation)
-                const urgencyScore = (lowerText.match(/[A-Z]{3,}/g) || []).length + 
-                                   (lowerText.match(/!!+/g) || []).length;
-                
-                const analysis = [];
-                let riskLevel = 'low';
-                
-                if (foundIndicators.length > 2) {
-                    analysis.push(`Ditemukan ${foundIndicators.length} indikator berita hoax`);
-                    riskLevel = 'high';
-                }
-                
-                if (urgencyScore > 3) {
-                    analysis.push('Terdapat indikasi penggunaan bahasa provokatif');
-                    riskLevel = 'high';
-                }
-                
-                if (lowerText.length < 50) {
-                    analysis.push('Berita terlalu singkat dan tidak informatif');
-                    riskLevel = 'medium';
-                }
-                
-                // Determine result
-                if (riskLevel === 'high') {
-                    return {
-                        title: 'BERITA HOAX TERDETEKSI',
-                        message: 'Berita ini memiliki karakteristik hoax. Jangan sebarkan sebelum verifikasi!',
-                        icon: 'exclamation-triangle',
-                        class: 'danger',
-                        analysis: analysis.length ? analysis : ['Memiliki pola khas berita hoax'],
-                        tip: 'Laporkan ke grup turnbackhoax.id atau cek di situs fact-checking resmi'
-                    };
-                } else if (riskLevel === 'medium') {
-                    return {
-                        title: 'PERLU VERIFIKASI',
-                        message: 'Berita ini memerlukan verifikasi lebih lanjut sebelum disebarkan',
-                        icon: 'exclamation-circle',
-                        class: 'warning',
-                        analysis: analysis.length ? analysis : ['Beberapa indikator perlu diperiksa'],
-                        tip: 'Cari sumber berita resmi dan konfirmasi ke pihak terkait'
-                    };
-                } else {
-                    return {
-                        title: 'AMAN DIBAGIKAN',
-                        message: 'Berita ini tampaknya aman, namun tetap selalu verifikasi sumber',
-                        icon: 'check-circle',
-                        class: 'safe',
-                        analysis: ['Tidak ditemukan indikator hoax yang jelas'],
-                        tip: 'Tetap pastikan sumber berita dari media terpercaya'
-                    };
-                }
-            }
-        } 
+                <div class="result-actions">
+                    <button class="btn btn-primary" id="restart-simple">
+                        <i class="fas fa-redo"></i> Ulangi Simulasi
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        document.getElementById('restart-simple').addEventListener('click', () => {
+            currentStep = 0;
+            score = 0;
+            showStep(0);
+        });
+    }
+    
+    showStep(0);
+}
+
+// Hoax Checker Functionality
+function initializeHoaxChecker() {
+    const checkHoaxBtn = document.getElementById('check-hoax-btn');
+    const hoaxInput = document.getElementById('hoax-check-input');
+    const hoaxResults = document.getElementById('hoax-results');
+    
+    if (!checkHoaxBtn || !hoaxInput || !hoaxResults) return;
+    
+    checkHoaxBtn.addEventListener('click', function() {
+        const text = hoaxInput.value.trim();
+        
+        if (!text) {
+            hoaxResults.innerHTML = '<p>Silakan masukkan teks berita yang ingin diperiksa.</p>';
+            hoaxResults.className = 'hoax-results warning';
+            hoaxResults.style.display = 'block';
+            return;
+        }
+        
+        // Simple hoax detection logic
+        let result = analyzeHoax(text);
+        
+        hoaxResults.innerHTML = `
+            <h5><i class="fas fa-${result.icon}"></i> ${result.title}</h5>
+            <p>${result.message}</p>
+            <div style="margin-top: 15px;">
+                <h6>Analisis:</h6>
+                <ul>
+                    ${result.analysis.map(item => `<li>${item}</li>`).join('')}
+                </ul>
+            </div>
+            <div style="margin-top: 15px; font-size: 0.9em; color: #666;">
+                <i class="fas fa-lightbulb"></i> <strong>Tips:</strong> ${result.tip}
+            </div>
+        `;
+        
+        hoaxResults.className = `hoax-results ${result.class}`;
+        hoaxResults.style.display = 'block';
+    });
+    
+    // Add enter key support
+    hoaxInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            checkHoaxBtn.click();
+        }
+    });
+    
+    function analyzeHoax(text) {
+        const lowerText = text.toLowerCase();
+        
+        // Keywords that might indicate hoax
+        const hoaxIndicators = [
+            'sebarkan', 'viralkan', 'forward ke', 'share ke semua grup',
+            '!!!', '???', 'paling penting', 'sangat mendesak',
+            'jangan diabaikan', 'hanya hari ini', 'terbatas',
+            'dokter bilang', 'profesor temukan', 'tanpa sumber jelas'
+        ];
+        
+        // Check for indicators
+        const foundIndicators = hoaxIndicators.filter(indicator => 
+            lowerText.includes(indicator)
+        );
+        
+        // Check for urgency indicators (caps lock, multiple punctuation)
+        const urgencyScore = (lowerText.match(/[A-Z]{3,}/g) || []).length + 
+                           (lowerText.match(/!!+/g) || []).length;
+        
+        const analysis = [];
+        let riskLevel = 'low';
+        
+        if (foundIndicators.length > 2) {
+            analysis.push(`Ditemukan ${foundIndicators.length} indikator berita hoax`);
+            riskLevel = 'high';
+        }
+        
+        if (urgencyScore > 3) {
+            analysis.push('Terdapat indikasi penggunaan bahasa provokatif');
+            riskLevel = 'high';
+        }
+        
+        if (lowerText.length < 50) {
+            analysis.push('Berita terlalu singkat dan tidak informatif');
+            riskLevel = 'medium';
+        }
+        
+        // Determine result
+        if (riskLevel === 'high') {
+            return {
+                title: 'BERITA HOAX TERDETEKSI',
+                message: 'Berita ini memiliki karakteristik hoax. Jangan sebarkan sebelum verifikasi!',
+                icon: 'exclamation-triangle',
+                class: 'danger',
+                analysis: analysis.length ? analysis : ['Memiliki pola khas berita hoax'],
+                tip: 'Laporkan ke grup turnbackhoax.id atau cek di situs fact-checking resmi'
+            };
+        } else if (riskLevel === 'medium') {
+            return {
+                title: 'PERLU VERIFIKASI',
+                message: 'Berita ini memerlukan verifikasi lebih lanjut sebelum disebarkan',
+                icon: 'exclamation-circle',
+                class: 'warning',
+                analysis: analysis.length ? analysis : ['Beberapa indikator perlu diperiksa'],
+                tip: 'Cari sumber berita resmi dan konfirmasi ke pihak terkait'
+            };
+        } else {
+            return {
+                title: 'AMAN DIBAGIKAN',
+                message: 'Berita ini tampaknya aman, namun tetap selalu verifikasi sumber',
+                icon: 'check-circle',
+                class: 'safe',
+                analysis: ['Tidak ditemukan indikator hoax yang jelas'],
+                tip: 'Tetap pastikan sumber berita dari media terpercaya'
+            };
+        }
+    }
+                                           }
         
         // Initialize Ethics Filter Demo
         function initializeEthicsFilterDemo() {
@@ -540,3 +732,4 @@
 </body>
 
 </html>
+
